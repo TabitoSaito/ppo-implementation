@@ -23,5 +23,3 @@ print(eval_agent(agent, env))
 
 env = gym.make("CartPole-v1", render_mode="human")
 eval_agent(agent, env, episodes=1)
-
-input()
