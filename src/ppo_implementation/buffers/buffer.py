@@ -3,15 +3,20 @@ import torch
 
 class RolloutBuffer:
     def __init__(self, size, obs_dim):
-        self.obs = torch.zeros(size, obs_dim)
-        self.actions = torch.zeros(size, dtype=torch.long)
-        self.rewards = torch.zeros(size)
-        self.dones = torch.zeros(size)
-        self.log_probs = torch.zeros(size)
-        self.values = torch.zeros(size)
+        self.size = size
+        self.obs_dim = obs_dim
+        self.reset()
 
-        self.advantages = torch.zeros(size)
-        self.returns = torch.zeros(size)
+    def reset(self):
+        self.obs = torch.zeros(self.size, self.obs_dim)
+        self.actions = torch.zeros(self.size, dtype=torch.long)
+        self.rewards = torch.zeros(self.size)
+        self.dones = torch.zeros(self.size)
+        self.log_probs = torch.zeros(self.size)
+        self.values = torch.zeros(self.size)
+
+        self.advantages = torch.zeros(self.size)
+        self.returns = torch.zeros(self.size)
         self.ptr = 0
 
     def add(self, obs, action, reward, done, log_prob, value):
