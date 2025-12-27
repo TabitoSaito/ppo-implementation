@@ -1,5 +1,6 @@
 import torch.optim as optim
 import torch
+import numpy as np
 
 
 class PPOAgent:
@@ -15,6 +16,8 @@ class PPOAgent:
         self.config = config
         self.buffer = buffer
 
+        
+
     def act(self, state):
         dist = self.policy_net(state)
         action = dist.sample()
@@ -27,9 +30,17 @@ class PPOAgent:
         self.buffer.add(state, action, reward, done, log_prob.detach(), value.detach())
 
     def update(self):
+        loss_pi_batch = []
+        loss_v_batch = []
+        entropy_batch = []
+        loss_batch = []
         self.buffer.compute_gae()
         for _ in range(self.config["UPDATE_EPISODES"]):
             idx = torch.randperm(self.buffer.size)
+            loss_pi_buffer = []
+            loss_v_buffer = []
+            entropy_buffer = []
+            loss_buffer = []
             for i in range(0, self.buffer.size, self.config["BATCH_SIZE"]):
                 b = idx[i : i + self.config["BATCH_SIZE"]]
 
@@ -49,6 +60,18 @@ class PPOAgent:
 
                 loss = loss_pi + self.config["VALUE_DISCOUNT"] * loss_v - self.config["ENTROPY_COEF"] * dist.entropy().mean()
 
+                loss_pi_buffer.append(loss_pi.item())
+                loss_v_buffer.append(loss_v.item())
+                entropy_buffer.append(dist.entropy().mean().item())
+                loss_buffer.append(loss.item())
+
                 self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
+
+            loss_pi_batch.append(np.mean(loss_pi_buffer))
+            loss_v_batch.append(np.mean(loss_v_buffer))
+            entropy_batch.append(np.mean(entropy_buffer))
+            loss_batch.append(np.mean(loss_buffer))
+
+        return loss_pi_batch, loss_v_batch, entropy_batch, loss_batch

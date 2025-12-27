@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify, Response
+from flask import Flask, render_template, Response
 import os
 import json
 from ..utils.helper import create_folder_on_marker
