@@ -14,6 +14,8 @@ class PolicyNet(nn.Module):
         )
 
     def forward(self, x):
+        if len(x.shape) < 1:
+            x = x.unsqueeze(0)
         logits = self.net(x)
         return Categorical(logits=logits)
 
@@ -30,4 +32,6 @@ class ValueNet(nn.Module):
         )
 
     def forward(self, x):
+        if len(x.shape) < 1:
+            x = x.unsqueeze(0)
         return self.net(x).squeeze(-1)

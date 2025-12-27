@@ -4,6 +4,7 @@ from ppo_implementation.networks.networks import PolicyNet, ValueNet
 from ppo_implementation.buffers.buffer import RolloutBuffer
 from ppo_implementation.train.evaluate import eval_agent
 import gymnasium as gym
+import datetime
 
 env = gym.make("CartPole-v1")
 
@@ -17,8 +18,9 @@ buffer = RolloutBuffer(64 * 32, obs_dim)
 
 agent = PPOAgent(policy, value, buffer)
 
-train_loop(agent, env)
+train_loop(agent, env, episodes=1, override=True, storage=datetime.datetime.now().strftime("%d%m%y%H%M%S"))
 
+print("eval")
 print(eval_agent(agent, env))
 
 env = gym.make("CartPole-v1", render_mode="human")

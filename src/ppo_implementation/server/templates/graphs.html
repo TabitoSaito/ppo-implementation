@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Graphs</title>
+<style>
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: #f5f5f5;
+        margin: 0;
+        padding: 20px;
+    }
+    h1 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 20px;
+    }
+    .controls {
+        text-align: center;
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+    button {
+        background-color: #1f77b4;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        font-size: 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    button:hover {
+        background-color: #105490;
+    }
+    .last-update {
+        margin-top: 10px;
+        font-size: 14px;
+        color: #555;
+        width: 100%;
+        text-align: center;
+    }
+    .graphs-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 25px;
+    }
+    .graph-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        padding: 15px;
+        max-width: 600px;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    img {
+        max-width: 100%;
+        border-radius: 8px;
+        display: block;
+        margin: 0 auto;
+    }
+</style>
+</head>
+<body>
+    <h1>Run Graphs</h1>
+    <div class="controls">
+        <button id="backBtn" onclick="window.location.href='{{ url_for('index') }}'">← Back to Runs</button>
+        <button id="refreshBtn">Refresh Graphs</button>
+        <div class="last-update" id="lastUpdate">Last update: 0s ago</div>
+    </div>
+    <div class="graphs-container" id="graphsContainer">
+        {% for img in imgs %}
+        <div class="graph-card">
+            <img src="{{ url_for('static', filename=img) }}" alt="Graph">
+        </div>
+        {% endfor %}
+    </div>
+
+<script>
+    const refreshBtn = document.getElementById('refreshBtn');
+    const lastUpdate = document.getElementById('lastUpdate');
+    const container = document.getElementById('graphsContainer');
+
+    let lastUpdateTime = Date.now();
+
+    function refreshGraphs() {
+        const images = container.querySelectorAll('img');
+        images.forEach(img => {
+            const src = img.src.split('?')[0];
+            img.src = src + '?t=' + new Date().getTime(); // force reload
+        });
+        lastUpdateTime = Date.now();
+        lastUpdate.textContent = 'Last update: 0s ago';
+    }
+
+    refreshBtn.addEventListener('click', refreshGraphs);
+
+    // Auto-refresh every 5 seconds
+    setInterval(() => {
+        refreshBtn.click();
+    }, 5000);
+
+    // Update counter every second
+    setInterval(() => {
+        const seconds = Math.floor((Date.now() - lastUpdateTime) / 1000);
+        lastUpdate.textContent = `Last update: ${seconds}s ago`;
+    }, 1000);
+</script>
+</body>
+</html>
