@@ -4,6 +4,7 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 import copy
+import json
 from ..utils.helper import create_folder_on_marker, minmax_downsample
 from .evaluate import render_run
 
@@ -24,7 +25,7 @@ class GraphPlotter(multiprocessing.Process):
 
         self.steps = 0
         self.df = None
-        self.storage = None
+        self.full_storage = None
         self.styles = styles
 
         self.cols = [[] for _ in styles]
@@ -32,14 +33,18 @@ class GraphPlotter(multiprocessing.Process):
 
     def get_storage(self, storage="run1", override=False):
         instance_dir = create_folder_on_marker("static", "server")
-        self.storage = os.path.join(instance_dir, storage)
-        if os.path.exists(self.storage):
+        self.storage = storage
+        self.full_storage = os.path.join(instance_dir, storage)
+        if os.path.exists(self.full_storage):
             if not override:
                 raise FileExistsError(
                     "Run with that name already exists. To override set 'override' flag to true"
                 )
         else:
-            os.makedirs(self.storage)
+            os.makedirs(os.path.join(self.full_storage, "imgs"))
+            os.makedirs(os.path.join(self.full_storage, "vids"))
+            with open(os.path.join(self.full_storage, "index.json"), "w") as f:
+                json.dump({"imgs": [], "vids": []}, f)
 
     def run(self):
         while self.running.is_set() or not self.stat_queue.empty() or not self.video_queue.empty():
@@ -68,6 +73,7 @@ class GraphPlotter(multiprocessing.Process):
         x = np.asarray(self.x)
         cols = [np.asarray(c) for c in self.cols]
 
+        imgs = []
         for y, style in zip(cols, self.styles):
             xd, yd = minmax_downsample(x, y)
 
@@ -98,19 +104,44 @@ class GraphPlotter(multiprocessing.Process):
             ax.ticklabel_format(style="sci", axis="x", scilimits=(0, 0))
             fig.tight_layout()
 
-            out_file = os.path.join(self.storage, f"{style["name"].replace(" ", "_")}.png")
+            out_file = os.path.join(self.full_storage, "imgs", f"{style["name"].replace(" ", "_")}.png")
             fig.savefig(out_file, dpi=150)
             plt.close(fig)
+
+            img = {
+                "src": os.path.join(self.storage, "imgs", f"{style["name"].replace(" ", "_")}.png")
+            }
+            imgs.append(img)
+
+        with open(os.path.join(self.full_storage, "index.json"), "r") as f:
+            index = json.load(f)
+
+        index["imgs"] = imgs
+        with open(os.path.join(self.full_storage, "index.json"), "w") as f:
+            json.dump(index, f)
 
     def save_video(self, agent, env, episode):
         agent = copy.deepcopy(agent)
         env = copy.deepcopy(env)
 
-        out_file = os.path.join(self.storage, f"{episode}.mp4")
+        out_file = os.path.join(self.full_storage, "vids", f"{episode}.mp4")
         try:
-            render_run(agent, env, out_file)
+            reward = render_run(agent, env, out_file)
         except Exception as e:
+            reward = 0
             print("Render failed with exception. ", e)
+
+        with open(os.path.join(self.full_storage, "index.json"), "r") as f:
+            index = json.load(f)
+
+        vid = {
+            "src": os.path.join(self.storage, "vids", f"{episode}.mp4"),
+            "episode": episode,
+            "reward": reward
+        }
+        index["vids"].append(vid)
+        with open(os.path.join(self.full_storage, "index.json"), "w") as f:
+            json.dump(index, f)
 
     def stop(self):
         self.running.clear()
