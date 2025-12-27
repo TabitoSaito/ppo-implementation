@@ -1,0 +1,10 @@
+HIDDEN_DIM: 64 # nodes in hidden layers
+LR: !!float 3e-3 # learn-rate
+ENTROPY_COEF: 0.01 # importance of entropy in loss
+VALUE_DISCOUNT: 0.5 # importance of state_value in loss
+GAMMA: 0.99 # discount factor
+LAMBDA: 0.95 # advantage discount
+CLIP: 0.2 # clip range
+UPDATE_EPISODES: 10 # episodes to train on one rollout
+BATCH_SIZE: 32 # batch size in episodes
+BATCH_NUM: 64 # number of batches in buffer
