@@ -3,6 +3,7 @@ import numpy as np
 import cv2
 import subprocess
 import os
+from itertools import count
 
 
 def eval_agent(agent, env, episodes=10):
@@ -32,7 +33,7 @@ def render_run(agent, env, file_path):
     frames = []
     obs, _ = env.reset()
     score = 0
-    while True:
+    for t in count():
         frame = env.render()
         frames.append(frame)
 
@@ -83,4 +84,9 @@ def render_run(agent, env, file_path):
 
     os.remove(tmp_path)
 
-    return score
+    metadata = {
+        "reward": score,
+        "steps": t,
+    }
+
+    return metadata

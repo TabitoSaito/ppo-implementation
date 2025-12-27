@@ -24,5 +24,3 @@ train_loop(agent, env, episodes=20, override=True, storage=datetime.datetime.now
 print("eval")
 print(eval_agent(agent, env))
 
-env = gym.make("CartPole-v1", render_mode="human")
-eval_agent(agent, env, episodes=1)

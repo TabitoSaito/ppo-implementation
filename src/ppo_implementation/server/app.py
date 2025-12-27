@@ -1,10 +1,11 @@
-from flask import Flask, render_template, redirect, url_for, jsonify
+from flask import Flask, render_template, jsonify, Response
 import os
 import json
 from ..utils.helper import create_folder_on_marker
 
 
 app = Flask(__name__, static_folder="static", static_url_path="/static")
+app.config['JSON_SORT_KEYS'] = False
 
 
 @app.route("/")
@@ -31,10 +32,9 @@ def assets(run):
     static_dir = create_folder_on_marker("static", "server")
     index = "index.json"
     run_full = os.path.join(static_dir, run, index)
-    print(run_full)
     if os.path.exists(run_full):
         with open(run_full) as file:
             d = json.load(file)
-            print(d)
-        return jsonify(d)
-    return jsonify()
+        json_str = json.dumps(d)
+        return Response(json_str, mimetype="application/json")
+    return Response("404")

@@ -178,7 +178,6 @@
       function createMetadataTable(meta) {
         const table = document.createElement("table");
         table.className = "meta-table";
-
         Object.entries(meta).forEach(([k, v]) => {
           if (k === "src") return;
 
@@ -214,7 +213,7 @@
         img.dataset.src = obj.src;
         img.src = `/static/${obj.src}?t=${Date.now()}`;
 
-        const table = createMetadataTable(obj);
+        const table = createMetadataTable(obj.metadata);
         const toggle = createToggle(table);
 
         card.append(img, toggle, table);
@@ -239,10 +238,10 @@
         const card = document.createElement("div");
         card.className = "card fade-in";
 
-        if (obj.episode !== undefined) {
+        if (obj.metadata.episode !== undefined) {
           const badge = document.createElement("div");
           badge.className = "badge";
-          badge.textContent = `Episode ${obj.episode}`;
+          badge.textContent = `Episode ${obj.metadata.episode}`;
           card.appendChild(badge);
         }
 
@@ -263,7 +262,7 @@
           }, 1000);
         });
 
-        const table = createMetadataTable(obj);
+        const table = createMetadataTable(obj.metadata);
         const toggle = createToggle(table);
 
         card.append(video, toggle, table);

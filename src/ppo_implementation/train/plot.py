@@ -7,6 +7,7 @@ import copy
 import json
 from ..utils.helper import create_folder_on_marker, minmax_downsample
 from .evaluate import render_run
+from collections import OrderedDict
 
 
 class GraphPlotter(multiprocessing.Process):
@@ -86,6 +87,8 @@ class GraphPlotter(multiprocessing.Process):
                 label=style["name"]
             )
 
+            hl_metadata = {}
+
             for h in style.get("hl", []):
                 ax.axhline(
                     h["y"],
@@ -93,6 +96,9 @@ class GraphPlotter(multiprocessing.Process):
                     linestyle=h.get("linestyle", "--"),
                     label=h.get("label")
                 )
+
+                hl_metadata[h.get("label")] = h["y"]
+
 
             ax.set_title(style["name"])
             ax.grid(alpha=0.3)
@@ -108,8 +114,24 @@ class GraphPlotter(multiprocessing.Process):
             fig.savefig(out_file, dpi=150)
             plt.close(fig)
 
+            if len(y) < 1:
+                metadata = hl_metadata
+            else:
+                metadata = OrderedDict({
+                    "min": y.min(),
+                    "max": y.max(),
+                    "mean": y.mean(),
+                    "std": y.std(),
+                    "min_100": y[-100:].min(),
+                    "max_100": y[-100:].max(),
+                    "mean_100": y[-100:].mean(),
+                    "std_100": y[-100:].std(),
+                    **hl_metadata
+                })
+
             img = {
-                "src": os.path.join(self.storage, "imgs", f"{style["name"].replace(" ", "_")}.png")
+                "src": os.path.join(self.storage, "imgs", f"{style["name"].replace(" ", "_")}.png"),
+                "metadata": metadata
             }
             imgs.append(img)
 
@@ -126,9 +148,9 @@ class GraphPlotter(multiprocessing.Process):
 
         out_file = os.path.join(self.full_storage, "vids", f"{episode}.mp4")
         try:
-            reward = render_run(agent, env, out_file)
+            data = render_run(agent, env, out_file)
         except Exception as e:
-            reward = 0
+            data = {}
             print("Render failed with exception. ", e)
 
         with open(os.path.join(self.full_storage, "index.json"), "r") as f:
@@ -136,8 +158,10 @@ class GraphPlotter(multiprocessing.Process):
 
         vid = {
             "src": os.path.join(self.storage, "vids", f"{episode}.mp4"),
-            "episode": episode,
-            "reward": reward
+            "metadata": {
+                "episode": episode,
+                **data
+            }
         }
         index["vids"].append(vid)
         with open(os.path.join(self.full_storage, "index.json"), "w") as f:
