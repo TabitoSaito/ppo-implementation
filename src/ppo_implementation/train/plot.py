@@ -1,18 +1,20 @@
 import os
-import pandas as pd
 import multiprocessing
 import time
 import matplotlib.pyplot as plt
 import numpy as np
+import copy
 from ..utils.helper import create_folder_on_marker, minmax_downsample
+from .evaluate import render_run
 
 
 class GraphPlotter(multiprocessing.Process):
     def __init__(
-        self, queue, styles: list, interval=5, plt_size=(6, 6), max_points=2000
+        self, stat_queue, video_queue, styles: list, interval=5, plt_size=(6, 6), max_points=2000
     ) -> None:
         super().__init__()
-        self.queue = queue
+        self.stat_queue = stat_queue
+        self.video_queue = video_queue
         self.interval = interval
         self.running = multiprocessing.Event()
         self.running.set()
@@ -40,10 +42,10 @@ class GraphPlotter(multiprocessing.Process):
             os.makedirs(self.storage)
 
     def run(self):
-        while self.running.is_set() or not self.queue.empty():
+        while self.running.is_set() or not self.stat_queue.empty() or not self.video_queue.empty():
             try:
                 while True:
-                    item = self.queue.get_nowait()
+                    item = self.stat_queue.get_nowait()
                     self.steps += 1
                     self.x.append(self.steps)
                     for i, v in enumerate(item):
@@ -52,6 +54,14 @@ class GraphPlotter(multiprocessing.Process):
                 pass
 
             self.plot_graphs()
+
+            try:
+                while True:
+                    agent, env, episode = self.video_queue.get_nowait()
+                    self.save_video(agent, env, episode)
+            except Exception:
+                pass
+
             time.sleep(self.interval)
 
     def plot_graphs(self):
@@ -92,6 +102,15 @@ class GraphPlotter(multiprocessing.Process):
             fig.savefig(out_file, dpi=150)
             plt.close(fig)
 
+    def save_video(self, agent, env, episode):
+        agent = copy.deepcopy(agent)
+        env = copy.deepcopy(env)
+
+        out_file = os.path.join(self.storage, f"{episode}.mp4")
+        try:
+            render_run(agent, env, out_file)
+        except Exception as e:
+            print("Render failed with exception. ", e)
 
     def stop(self):
         self.running.clear()

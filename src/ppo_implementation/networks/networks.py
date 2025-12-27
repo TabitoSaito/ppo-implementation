@@ -3,14 +3,14 @@ from torch.distributions import Categorical
 
 
 class PolicyNet(nn.Module):
-    def __init__(self, obs_dim, act_dim):
+    def __init__(self, obs_dim, act_dim, hidden_dim=64):
         super().__init__()
         self.net = nn.Sequential(
-            nn.Linear(obs_dim, 64),
+            nn.Linear(obs_dim, hidden_dim),
             nn.Tanh(),
-            nn.Linear(64, 64),
+            nn.Linear(hidden_dim, hidden_dim),
             nn.Tanh(),
-            nn.Linear(64, act_dim),
+            nn.Linear(hidden_dim, act_dim),
         )
 
     def forward(self, x):
@@ -21,14 +21,14 @@ class PolicyNet(nn.Module):
 
 
 class ValueNet(nn.Module):
-    def __init__(self, obs_dim):
+    def __init__(self, obs_dim, hidden_dim=64):
         super().__init__()
         self.net = nn.Sequential(
-            nn.Linear(obs_dim, 64),
+            nn.Linear(obs_dim, hidden_dim),
             nn.Tanh(),
-            nn.Linear(64, 64),
+            nn.Linear(hidden_dim, hidden_dim),
             nn.Tanh(),
-            nn.Linear(64, 1),
+            nn.Linear(hidden_dim, 1),
         )
 
     def forward(self, x):

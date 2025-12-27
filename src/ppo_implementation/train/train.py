@@ -1,13 +1,12 @@
 from itertools import count
 import torch
-from .evaluate import eval_agent
-import copy
 from .plot import GraphPlotter
 import multiprocessing
 
 
-def train_loop(agent, env, episodes=0, batch_size=64, storage="run1", override=False):
-    q = multiprocessing.Queue()
+def train_loop(agent, env, episodes=0, storage="run1", override=False, video_interval=100):
+    stat_q = multiprocessing.Queue()
+    video_q = multiprocessing.Queue()
     styles = [
         {
             "name": "Reward",
@@ -16,11 +15,12 @@ def train_loop(agent, env, episodes=0, batch_size=64, storage="run1", override=F
             "hl": [{"y": 200, "color": "red", "style": "--", "label": "Target"}],
         }
     ]
-    plotter = GraphPlotter(q, styles)
+    plotter = GraphPlotter(stat_q, video_q, styles)
     plotter.get_storage(storage, override)
     plotter.start()
 
-    eval_env = copy.deepcopy(env)
+    episode = 0
+
     try:
         for it in count():
             obs, _ = env.reset()
@@ -40,12 +40,14 @@ def train_loop(agent, env, episodes=0, batch_size=64, storage="run1", override=F
                 obs = next_obs
                 
                 if done:
+                    episode += 1
                     obs, _ = env.reset()
-                    q.put([score])
+                    stat_q.put([score])
                     score = 0
 
-            agent.update(batch_size)
-
+            agent.update()
+            if it % video_interval == 0:
+                video_q.put((agent, env, episode))
             if episodes == 0:
                 continue
             if it >= episodes:

@@ -2,9 +2,10 @@ import torch
 
 
 class RolloutBuffer:
-    def __init__(self, size, obs_dim):
-        self.size = size
+    def __init__(self, obs_dim, config):
+        self.size = config["BATCH_SIZE"] * config["BATCH_NUM"]
         self.obs_dim = obs_dim
+        self.config = config
         self.reset()
 
     def reset(self):
@@ -28,17 +29,17 @@ class RolloutBuffer:
         self.values[self.ptr] = value
         self.ptr += 1
 
-    def compute_gae(self, gamma=0.99, lam=0.95):
+    def compute_gae(self):
         adv = 0
         for t in reversed(range(self.ptr)):
             delta = (
                 self.rewards[t]
-                + gamma
+                + self.config["GAMMA"]
                 * (1 - self.dones[t])
                 * (self.values[t + 1] if t + 1 < self.ptr else 0)
                 - self.values[t]
             )
-            adv = delta + gamma * lam * (1 - self.dones[t]) * adv
+            adv = delta + self.config["GAMMA"] * self.config["LAMBDA"] * (1 - self.dones[t]) * adv
             self.advantages[t] = adv
             self.returns[t] = adv + self.values[t]
 
