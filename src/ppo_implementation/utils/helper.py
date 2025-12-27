@@ -1,6 +1,8 @@
 import os
 import numpy as np
-import pandas as pd
+from ppo_implementation.agents.ppo_agent import PPOAgent
+from ppo_implementation.networks.networks import PolicyNet, ValueNet
+from ppo_implementation.buffers.buffer import RolloutBuffer
 
 
 def create_folder_on_marker(folder: str, marker="src"):
@@ -42,3 +44,14 @@ def minmax_downsample(x, y, max_points=2000):
         ys.extend([y_seg[i_min], y_seg[i_max]])
 
     return np.array(xs), np.array(ys)
+
+
+def build_agent(obs_dim, act_dim, config):
+    policy = PolicyNet(obs_dim, act_dim)
+    value = ValueNet(obs_dim)
+
+    buffer = RolloutBuffer(obs_dim, config)
+
+    agent = PPOAgent(policy, value, buffer, config)
+
+    return agent
