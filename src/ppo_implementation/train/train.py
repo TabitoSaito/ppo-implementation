@@ -2,17 +2,20 @@ from itertools import count
 import torch
 from .plot import GraphPlotter
 from ..utils.helper import StateQueue, QueueBatch
+from .evaluate import eval_agent
 import multiprocessing
 
 
 def train_loop(agent, env, episodes=0, storage="run1", override=False, video_interval=100):
+    baseline = eval_agent(agent, env, episodes=50)
+
     video_q = multiprocessing.Queue()
     styles1 = [
         {
             "name": "Reward",
             "color": "#1f77b4",
             "linestyle": "-",
-            "hl": [{"y": 200, "color": "red", "style": "--", "label": "Target"}],
+            "hl": [{"y": baseline, "color": "red", "style": "--", "label": "Baseline"}],
         }
     ]
     styles2 = [

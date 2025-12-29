@@ -19,8 +19,4 @@ with open(os.path.join(current_dir, config, file)) as stream:
 
 agent = build_agent(obs_dim, act_dim, config)
 
-train_loop(agent, env, episodes=20, override=True, storage=datetime.datetime.now().strftime("%d-%m-%y-%H-%M-%S"), video_interval=5)
-
-print("eval")
-print(eval_agent(agent, env))
-
+train_loop(agent, env, episodes=0, override=True, storage=datetime.datetime.now().strftime("%d-%m-%y-%H-%M-%S"), video_interval=20)
