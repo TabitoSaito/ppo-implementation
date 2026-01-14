@@ -3,7 +3,6 @@ import multiprocessing
 import time
 import matplotlib.pyplot as plt
 import numpy as np
-import copy
 import json
 from ..utils.helper import create_folder_on_marker, minmax_downsample, QueueBatch
 from .evaluate import render_run
@@ -11,11 +10,10 @@ from .evaluate import render_run
 
 class GraphPlotter(multiprocessing.Process):
     def __init__(
-        self, stat_queue_batch: QueueBatch, video_queue, interval=5, plt_size=(6, 6), max_points=2000
+        self, stat_queue_batch: QueueBatch, interval=5, plt_size=(6, 6), max_points=2000
     ) -> None:
         super().__init__()
         self.stat_queue_batch = stat_queue_batch
-        self.video_queue = video_queue
         self.interval = interval
         self.running = multiprocessing.Event()
         self.running.set()
@@ -43,18 +41,9 @@ class GraphPlotter(multiprocessing.Process):
                 json.dump({"imgs": [], "vids": []}, f)
 
     def run(self):
-        while self.running.is_set() or not self.stat_queue_batch.check_empty() or not self.video_queue.empty():
+        while self.running.is_set() or not self.stat_queue_batch.check_empty():
             self.stat_queue_batch.fetch_states()
-
             self.plot_graphs()
-
-            try:
-                while True:
-                    agent, env, episode = self.video_queue.get_nowait()
-                    self.save_video(agent, env, episode)
-            except Exception:
-                pass
-
             time.sleep(self.interval)
 
     def plot_graphs(self):
@@ -62,7 +51,6 @@ class GraphPlotter(multiprocessing.Process):
         for q in self.stat_queue_batch:
             x = np.asarray(q.x)
             cols = [np.asarray(c) for c in q.cols]
-
             for y, style in zip(cols, q.styles):
                 xd, yd = minmax_downsample(x, y)
 
@@ -130,33 +118,29 @@ class GraphPlotter(multiprocessing.Process):
         with open(os.path.join(self.full_storage, "index.json"), "w") as f:
             json.dump(index, f)
 
-    def save_video(self, agent, env, episode):
-        agent = copy.deepcopy(agent)
-        env = copy.deepcopy(env)
-
-        out_file = os.path.join(self.full_storage, "vids", f"{episode}.mp4")
-        try:
-            data = render_run(agent, env, out_file)
-        except Exception as e:
-            data = {}
-            print("Render failed with exception. ", e)
-
-        with open(os.path.join(self.full_storage, "index.json"), "r") as f:
-            index = json.load(f)
-
-        vid = {
-            "src": os.path.join(self.storage, "vids", f"{episode}.mp4"),
-            "metadata": {
-                "episode": episode,
-                **data
-            }
-        }
-        index["vids"].append(vid)
-        with open(os.path.join(self.full_storage, "index.json"), "w") as f:
-            json.dump(index, f)
-
     def stop(self):
         self.running.clear()
         self.join(timeout=self.interval + 4)
 
 
+def save_video(agent, env, episode, plotter):
+    out_file = os.path.join(plotter.full_storage, "vids", f"{episode}.mp4")
+    try:
+        data = render_run(agent, env, out_file)
+    except Exception as e:
+        data = {}
+        print("Render failed with exception. ", e)
+
+    with open(os.path.join(plotter.full_storage, "index.json"), "r") as f:
+        index = json.load(f)
+
+    vid = {
+        "src": os.path.join(plotter.storage, "vids", f"{episode}.mp4"),
+        "metadata": {
+            "episode": episode,
+            **data
+        }
+    }
+    index["vids"].append(vid)
+    with open(os.path.join(plotter.full_storage, "index.json"), "w") as f:
+        json.dump(index, f)

@@ -1,9 +1,10 @@
 import os
 import numpy as np
 import multiprocessing
-from ppo_implementation.agents.ppo_agent import PPOAgent
-from ppo_implementation.networks.networks import PolicyNet, ValueNet
-from ppo_implementation.buffers.buffer import RolloutBuffer
+import random
+from ..agents.ppo_agent import PPOAgent
+from ..networks.networks import PolicyNet, ValueNet
+from ..buffers.buffer import RolloutBuffer
 
 
 def create_folder_on_marker(folder: str, marker="src"):
@@ -47,11 +48,12 @@ def minmax_downsample(x, y, max_points=2000):
     return np.array(xs), np.array(ys)
 
 
-def build_agent(obs_dim, act_dim, config):
-    policy = PolicyNet(obs_dim, act_dim)
+def build_agent(obs_shape, act_shape, config):
+    obs_dim = obs_shape[0]
+    policy = PolicyNet(obs_dim, act_shape)
     value = ValueNet(obs_dim)
 
-    buffer = RolloutBuffer(obs_dim, config)
+    buffer = RolloutBuffer(obs_shape, act_shape, config)
 
     agent = PPOAgent(policy, value, buffer, config)
 
