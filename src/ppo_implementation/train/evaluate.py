@@ -31,15 +31,28 @@ def render_run(agent, env, file_path):
     assert env.render_mode == "rgb_array"
 
     frames = []
-    obs, _ = env.reset()
+    obs, info = env.reset()
+
+    try:
+        mask = info["mask"]
+        mask = torch.tensor(mask, dtype=torch.bool)
+    except KeyError:
+        mask = None
+
     score = 0
     for t in count():
         frame = env.render()
         frames.append(frame)
 
         obs_t = torch.tensor(obs, dtype=torch.float32)
-        action, _, _ = agent.act(obs_t)
-        obs, reward, terminated, truncated, _ = env.step(action.item())
+        action, _, _ = agent.act(obs_t, mask)
+        obs, reward, terminated, truncated, info = env.step(action.item())
+
+        try:
+            mask = info["mask"]
+            mask = torch.tensor(mask, dtype=torch.bool)
+        except KeyError:
+            mask = None
 
         score += reward
         if terminated or truncated:

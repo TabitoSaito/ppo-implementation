@@ -18,16 +18,16 @@ class PPOAgent:
 
         
 
-    def act(self, state):
-        dist = self.policy_net(state)
+    def act(self, state, mask=None):
+        dist = self.policy_net(state, mask)
         action = dist.sample()
         log_prob = dist.log_prob(action)
         value = self.value_net(state)
 
         return action, log_prob, value
     
-    def remember(self, state, action, reward, done, log_prob, value):
-        self.buffer.add(state, action, reward, done, log_prob.detach(), value.detach())
+    def remember(self, state, action, reward, done, log_prob, value, mask=None):
+        self.buffer.add(state, action, reward, done, log_prob.detach(), value.detach(), mask)
 
     def update(self):
         loss_pi_batch = []
@@ -44,7 +44,7 @@ class PPOAgent:
             for i in range(0, self.buffer.size, self.config["BATCH_SIZE"]):
                 b = idx[i : i + self.config["BATCH_SIZE"]]
 
-                dist = self.policy_net(self.buffer.obs[b])
+                dist = self.policy_net(self.buffer.obs[b], self.buffer.masks[b])
                 new_logp = dist.log_prob(self.buffer.actions[b])
                 ratio = torch.exp(new_logp - self.buffer.log_probs[b])
 
