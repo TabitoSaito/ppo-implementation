@@ -5,20 +5,34 @@ import subprocess
 import os
 from itertools import count
 
-
+# TODO add masking
 def eval_agent(agent, env, episodes=10):
     scores = []
     for i in range(episodes):
-        obs, _ = env.reset()
+        obs, info = env.reset()
+
+        try:
+            mask = info["mask"]
+            mask = torch.tensor(mask, dtype=torch.bool)
+        except KeyError:
+            mask = None
+
         score = 0
         while True:
             obs_t = torch.tensor(obs, dtype=torch.float32)
             action, _, _ = agent.act(obs_t)
-            next_obs, reward, terminated, truncated, _ = env.step(action.item())
+            next_obs, reward, terminated, truncated, info = env.step(action.item())
 
             done = terminated or truncated
 
             obs = next_obs
+
+            try:
+                mask = info["mask"]
+                mask = torch.tensor(mask, dtype=torch.bool)
+            except KeyError:
+                mask = None
+
             score += reward
             if done:
                 scores.append(score)
