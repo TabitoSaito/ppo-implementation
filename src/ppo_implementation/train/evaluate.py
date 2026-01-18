@@ -4,34 +4,26 @@ import cv2
 import subprocess
 import os
 from itertools import count
+from ..utils.helper import get_mask
+from ..agents.ppo_agent import PPOAgent
 
-# TODO add masking
-def eval_agent(agent, env, episodes=10):
+
+def eval_agent(agent: PPOAgent, env, episodes=10):
     scores = []
     for i in range(episodes):
         obs, info = env.reset()
-
-        try:
-            mask = info["mask"]
-            mask = torch.tensor(mask, dtype=torch.bool)
-        except KeyError:
-            mask = None
+        mask = get_mask(info)
 
         score = 0
         while True:
             obs_t = torch.tensor(obs, dtype=torch.float32)
-            action, _, _ = agent.act(obs_t)
+            action, _, _, _ = agent.act(obs_t, mask)
             next_obs, reward, terminated, truncated, info = env.step(action.item())
 
             done = terminated or truncated
 
             obs = next_obs
-
-            try:
-                mask = info["mask"]
-                mask = torch.tensor(mask, dtype=torch.bool)
-            except KeyError:
-                mask = None
+            mask = get_mask(info)
 
             score += reward
             if done:
@@ -41,17 +33,12 @@ def eval_agent(agent, env, episodes=10):
     return np.mean(scores)
 
 
-def render_run(agent, env, file_path):
+def render_run(agent: PPOAgent, env, file_path):
     assert env.render_mode == "rgb_array"
 
     frames = []
     obs, info = env.reset()
-
-    try:
-        mask = info["mask"]
-        mask = torch.tensor(mask, dtype=torch.bool)
-    except KeyError:
-        mask = None
+    mask = get_mask(info)
 
     score = 0
     for t in count():
@@ -59,14 +46,10 @@ def render_run(agent, env, file_path):
         frames.append(frame)
 
         obs_t = torch.tensor(obs, dtype=torch.float32)
-        action, _, _ = agent.act(obs_t, mask)
+        action, _, _, _ = agent.act(obs_t, mask)
         obs, reward, terminated, truncated, info = env.step(action.item())
 
-        try:
-            mask = info["mask"]
-            mask = torch.tensor(mask, dtype=torch.bool)
-        except KeyError:
-            mask = None
+        mask = get_mask(info)
 
         score += reward
         if terminated or truncated:

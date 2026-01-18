@@ -1,10 +1,11 @@
 import os
-import numpy as np
-import multiprocessing
 import random
+import torch
+import numpy as np
 from ..agents.ppo_agent import PPOAgent
 from ..networks.networks import PolicyNet, ValueNet
 from ..buffers.buffer import RolloutBuffer
+from .writer import writer
 
 
 def create_folder_on_marker(folder: str, marker="src"):
@@ -25,30 +26,10 @@ def create_folder_on_marker(folder: str, marker="src"):
     return target
 
 
-def minmax_downsample(x, y, max_points=2000):
-    n = len(x)
-    if n <= max_points:
-        return x, y
+def build_agent(obs_shape, act_shape, config, logging: bool):
+    if logging:
+        writer.add_hparams(config, {})
 
-    bins = np.linspace(0, n, max_points, dtype=int)
-    xs, ys = [], []
-
-    for i in range(len(bins) - 1):
-        seg = slice(bins[i], bins[i + 1])
-        y_seg = y[seg]
-        if len(y_seg) == 0:
-            continue
-
-        i_min = np.argmin(y_seg)
-        i_max = np.argmax(y_seg)
-
-        xs.extend([x[seg][i_min], x[seg][i_max]])
-        ys.extend([y_seg[i_min], y_seg[i_max]])
-
-    return np.array(xs), np.array(ys)
-
-
-def build_agent(obs_shape, act_shape, config):
     obs_dim = obs_shape[0]
     policy = PolicyNet(obs_dim, act_shape)
     value = ValueNet(obs_dim)
@@ -58,63 +39,6 @@ def build_agent(obs_shape, act_shape, config):
     agent = PPOAgent(policy, value, buffer, config)
 
     return agent
-
-
-class StateQueue:
-    def __init__(self, styles, unit) -> None:
-        self.q = multiprocessing.Queue()
-        self.styles = styles
-        self.unit = unit
-
-        self.cols = [[] for _ in styles]
-        self.x = []
-        self.steps = 0
-
-    def put(self, *arg, **kwarg):
-        self.q.put(*arg, **kwarg)
-
-    def empty(self):
-        return self.q.empty()
-
-    def fetch_states(self):
-        try:
-            while True:
-                item = self.q.get_nowait()
-                self.steps += 1
-                self.x.append(self.steps)
-                for i, v in enumerate(item):
-                    self.cols[i].append(v)
-        except Exception:
-            pass
-
-
-class QueueBatch:
-    def __init__(self, queues: list[StateQueue]) -> None:
-        self.queues = queues
-
-    def check_empty(self) -> bool:
-        """check if all queues are empty
-
-        Returns:
-            bool: True if all empty
-        """
-        for q in self.queues:
-            if q.q.empty():
-                continue
-            else:
-                return False
-        return True
-
-    def fetch_states(self):
-        for q in self.queues:
-            q.fetch_states()
-
-    def __iter__(self):
-        for q in self.queues:
-            yield q
-
-    def __len__(self):
-        return len(self.queues)
 
 
 def action_to_index(action, shape: tuple):
@@ -150,3 +74,38 @@ def index_in_bound(index: tuple[int, int], bound: tuple[int, int]):
     if not 0 <= index[1] < bound[1]:
         return False
     return True
+
+
+def get_mask(info):
+    try:
+        mask = info["mask"]
+        mask = torch.tensor(mask, dtype=torch.bool)
+    except KeyError:
+        mask = None
+    return mask
+
+
+def save_video(agent: PPOAgent, env, episode: int, name: str):
+    obs, info = env.reset()
+
+    mask = get_mask(info)
+
+    frames = []
+    done = False
+    frame = env.render()
+    frames.append(frame)
+    while not done:
+        obs_t = torch.tensor(obs, dtype=torch.float32)
+        action, _, _, _ = agent.act(obs_t, mask)
+        next_obs, _, terminated, truncated, info = env.step(action.item())
+
+        obs = next_obs
+        mask = get_mask(info)
+
+        done = terminated or truncated
+        frame = env.render()
+        frames.append(frame)
+
+    frame_t = torch.from_numpy(np.stack(frames)).permute((0, 3, 1, 2)).unsqueeze(0)
+
+    writer.add_video(name, frame_t, episode, fps=env.metadata["render_fps"])

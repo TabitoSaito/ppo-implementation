@@ -1,6 +1,5 @@
 import torch.nn as nn
 from torch.distributions import Categorical
-import numpy as np
 import torch
 
 
@@ -30,7 +29,7 @@ class PolicyNet(nn.Module):
         logits = torch.flatten(logits, start_dim=1)
         if mask is not None:
             logits.masked_fill_(mask, float("-inf"))
-        return Categorical(logits=logits)
+        return logits
 
 
 class ValueNet(nn.Module):
