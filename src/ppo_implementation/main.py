@@ -19,6 +19,6 @@ file = "default.yaml"
 with open(os.path.join(current_dir, config, file)) as stream:
     config = yaml.safe_load(stream)
 
-agent = build_agent(obs_shape, act_shape, config, True)
+agent = build_agent(obs_shape, act_shape, config)
 
-train_loop(agent, env, episodes=3, video_interval=1)
+train_loop(agent, env, config, episodes=3, video_interval=1)

@@ -1,4 +1,3 @@
-import os
 import random
 import torch
 import numpy as np
@@ -8,28 +7,7 @@ from ..buffers.buffer import RolloutBuffer
 from .writer import writer
 
 
-def create_folder_on_marker(folder: str, marker="src"):
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    project_root = current_dir
-    while True:
-        if marker in os.listdir(project_root):
-            break
-        parent = os.path.dirname(project_root)
-        if parent == project_root:
-            raise FileNotFoundError(
-                f"Projekt-Root mit Marker '{marker}' nicht gefunden!"
-            )
-        project_root = parent
-
-    target = os.path.join(project_root, marker, folder)
-    os.makedirs(target, exist_ok=True)
-    return target
-
-
-def build_agent(obs_shape, act_shape, config, logging: bool):
-    if logging:
-        writer.add_hparams(config, {})
-
+def build_agent(obs_shape, act_shape, config):
     obs_dim = obs_shape[0]
     policy = PolicyNet(obs_dim, act_shape)
     value = ValueNet(obs_dim)

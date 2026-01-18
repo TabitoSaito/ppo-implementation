@@ -30,7 +30,7 @@ def eval_agent(agent: PPOAgent, env, episodes=10):
                 scores.append(score)
                 break
 
-    return np.mean(scores)
+    return scores
 
 
 def render_run(agent: PPOAgent, env, file_path):

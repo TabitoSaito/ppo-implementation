@@ -19,13 +19,13 @@ class PPOAgent:
         self.buffer = buffer
 
     def act(self, state, mask=None):
-        logits = self.policy_net(state, mask)
+        logits, raw_logits = self.policy_net(state, mask)
         dist = Categorical(logits=logits)
         action = dist.sample()
         log_prob = dist.log_prob(action)
         value = self.value_net(state)
 
-        return action, log_prob, value, logits
+        return action, log_prob, value, raw_logits
 
     def remember(self, state, action, reward, done, log_prob, value, mask=None):
         self.buffer.add(
@@ -43,7 +43,7 @@ class PPOAgent:
             for i in range(0, self.buffer.size, self.config["BATCH_SIZE"]):
                 b = idx[i : i + self.config["BATCH_SIZE"]]
 
-                logits = self.policy_net(self.buffer.obs[b], self.buffer.masks[b])
+                logits, _ = self.policy_net(self.buffer.obs[b], self.buffer.masks[b])
                 dist = Categorical(logits=logits)
                 new_logp = dist.log_prob(self.buffer.actions[b])
                 ratio = torch.exp(new_logp - self.buffer.log_probs[b])
@@ -80,20 +80,20 @@ class PPOAgent:
             GLOBAL_STEPS["update_episodes"] += 1
 
             writer.add_scalar(
-                "Agent/Action loss",
+                "Loss/action",
                 np.mean(loss_pi_buffer),
                 GLOBAL_STEPS["update_episodes"],
             )
             writer.add_scalar(
-                "Agent/Value loss",
+                "Loss/state",
                 np.mean(loss_v_buffer),
                 GLOBAL_STEPS["update_episodes"],
             )
             writer.add_scalar(
-                "Agent/Entropy loss",
+                "Loss/entropy",
                 np.mean(entropy_buffer),
                 GLOBAL_STEPS["update_episodes"],
             )
             writer.add_scalar(
-                "Agent/loss", np.mean(loss_buffer), GLOBAL_STEPS["update_episodes"]
+                "Loss/loss", np.mean(loss_buffer), GLOBAL_STEPS["update_episodes"]
             )
