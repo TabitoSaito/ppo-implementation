@@ -1,12 +1,12 @@
 from ppo_implementation.train.train import train_loop
 from ppo_implementation.utils.helper import build_agent
 from ppo_implementation.envs.minesweeper import MinesweeperEnv
-from ppo_implementation.envs.wrappers import OneHotEncodeBoardStacked
+from ppo_implementation.envs.wrappers import OneHotEncodeBoard
 import yaml
 import os
 
 env = MinesweeperEnv(render_mode="rgb_array")
-env = OneHotEncodeBoardStacked(env, stack_size=1)
+env = OneHotEncodeBoard(env)
 
 state, info = env.reset()
 
@@ -21,4 +21,4 @@ with open(os.path.join(current_dir, config, file)) as stream:
 
 agent = build_agent(obs_shape, act_shape, config)
 
-train_loop(agent, env, config, episodes=3, video_interval=1)
+train_loop(agent, env, config, episodes=0, video_interval=50)
