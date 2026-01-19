@@ -67,7 +67,7 @@ class MinesweeperEnv(gym.Env):
         )
 
     def reset(self, seed=None, options=None):
-        super().reset(seed=seed)
+        super().reset(seed=seed, options=options)
 
         # game logic
         self._board.fill(Identifier.UNREVEALED.value)
@@ -261,18 +261,19 @@ class MinesweeperEnv(gym.Env):
                 self.reward += -1
                 self._terminated = True
 
-            counter = 0
             for i in [[1, 0], [-1, 0], [0, 1], [0, -1]]:
                 if helper.index_in_bound(cell + i, self._master_board.shape):
                     master_value = self._master_board[*cell + i]
                     if self._board[*cell + i] == Identifier.UNREVEALED:
-                        counter += 1
+                        self.reward += -0.02
                     if master_value == Identifier.NOTHING.value or reveal_all:
                         cells.append(cell + i)
-                else:
-                    counter += 1
-            if counter == 4:
-                self.reward += -0.02
+
+            for i in [[1, 1], [-1, 1], [1, -1], [-1, -1]]:
+                if helper.index_in_bound(cell + i, self._master_board.shape):
+                    master_value = self._master_board[*cell + i]
+                    if self._board[*cell + i] == Identifier.UNREVEALED:
+                        self.reward += -0.02
 
             del cells[0]
 
