@@ -69,6 +69,8 @@ class ScoringPolicyNet(nn.Module):
         )
 
     def forward(self, x, mask=None):
+        if x.dim() == 2:
+            x = x.unsqueeze(0)
         batch_size, num_elements, num_features = x.shape
         x_flat = x.view(-1, num_features)
 
@@ -91,7 +93,9 @@ class ScoringValueNet(nn.Module):
             nn.Linear(hidden_dim, 1)
         )
 
-    def forward(self, x, mask=None):
+    def forward(self, x):
+        if x.dim() == 2:
+            x = x.unsqueeze(0)
         batch_size, num_elements, num_features = x.shape
         x_flat = x.view(-1, num_features)
 

@@ -5,6 +5,7 @@ class Identifier(Enum):
     NOTHING = 0
     BOMB = -1
     UNREVEALED = -2
+    OFF_BOARD = -3
 
 
 NUM_TO_COLOR = {

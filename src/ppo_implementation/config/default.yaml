@@ -9,5 +9,5 @@ UPDATE_EPISODES: 10 # episodes to train on one rollout
 BATCH_SIZE: 32 # batch size in episodes
 BATCH_NUM: 64 # number of batches in buffer
 
-POLICY_NET: CNN # CNN | SCORE
-VALUE_NET: CNN # CNN | SCORE
+POLICY_NET: SCORE # CNN | SCORE
+VALUE_NET: SCORE # CNN | SCORE

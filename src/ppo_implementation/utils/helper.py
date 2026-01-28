@@ -14,7 +14,7 @@ def build_agent(obs_shape, act_shape, config):
         case "cnn":
             policy = CNNPolicyNet(obs_dim, act_shape)
         case "score":
-            policy = ScoringPolicyNet(8)
+            policy = ScoringPolicyNet(9)
         case _:
             raise ValueError(f"No policy network with name '{config["POLICY_NET"].lower()}'")
 
@@ -22,7 +22,7 @@ def build_agent(obs_shape, act_shape, config):
         case "cnn":
             value = CNNValueNet(obs_dim, act_shape)
         case "score":
-            value = ScoringValueNet(8)
+            value = ScoringValueNet(9)
         case _:
             raise ValueError(f"No value network with name '{config["VALUE_NET"].lower()}'")
 
