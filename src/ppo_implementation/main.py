@@ -21,4 +21,4 @@ with open(os.path.join(current_dir, config, file)) as stream:
 
 agent = build_agent(obs_shape, act_shape, config)
 
-train_loop(agent, env, config, episodes=0, video_interval=50)
+train_loop(agent, env, config, episodes=2, video_interval=50)

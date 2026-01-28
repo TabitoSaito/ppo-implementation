@@ -2,15 +2,30 @@ import random
 import torch
 import numpy as np
 from ..agents.ppo_agent import PPOAgent
-from ..networks.networks import CNNPolicyNet, CNNValueNet
+from ..networks.networks import CNNPolicyNet, CNNValueNet, ScoringPolicyNet, ScoringValueNet
 from ..buffers.buffer import RolloutBuffer
 from .writer import writer
 
 
 def build_agent(obs_shape, act_shape, config):
     obs_dim = obs_shape[0]
-    policy = CNNPolicyNet(obs_dim, act_shape)
-    value = CNNValueNet(obs_dim)
+
+    match config["POLICY_NET"].lower():
+        case "cnn":
+            policy = CNNPolicyNet(obs_dim, act_shape)
+        case "score":
+            policy = ScoringPolicyNet(8)
+        case _:
+            raise ValueError(f"No policy network with name '{config["POLICY_NET"].lower()}'")
+
+    match config["VALUE_NET"].lower():
+        case "cnn":
+            value = CNNValueNet(obs_dim, act_shape)
+        case "score":
+            value = ScoringValueNet(8)
+        case _:
+            raise ValueError(f"No value network with name '{config["VALUE_NET"].lower()}'")
+
 
     buffer = RolloutBuffer(obs_shape, act_shape, config)
 

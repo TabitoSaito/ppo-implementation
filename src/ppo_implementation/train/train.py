@@ -81,11 +81,7 @@ def train_loop(agent: PPOAgent, env, config, episodes=0, video_interval=100):
                     )
 
                     score = 0
-                    try:
-                        mask = info["mask"]
-                        mask = torch.tensor(mask, dtype=torch.bool)
-                    except KeyError:
-                        mask = None
+                    mask = get_mask(info)
 
             agent.update()
 
