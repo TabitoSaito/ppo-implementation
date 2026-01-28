@@ -2,15 +2,15 @@ import random
 import torch
 import numpy as np
 from ..agents.ppo_agent import PPOAgent
-from ..networks.networks import PolicyNet, ValueNet
+from ..networks.networks import CNNPolicyNet, CNNValueNet
 from ..buffers.buffer import RolloutBuffer
 from .writer import writer
 
 
 def build_agent(obs_shape, act_shape, config):
     obs_dim = obs_shape[0]
-    policy = PolicyNet(obs_dim, act_shape)
-    value = ValueNet(obs_dim)
+    policy = CNNPolicyNet(obs_dim, act_shape)
+    value = CNNValueNet(obs_dim)
 
     buffer = RolloutBuffer(obs_shape, act_shape, config)
 
